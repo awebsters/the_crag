@@ -12,18 +12,15 @@
     <p v-if="errorMessage">{{ errorMessage }}</p>
   </div>
   <div class="search-box">
-    <input v-model="location" @blur="blurred" placeholder="Location" />
+    <input v-model="location" placeholder="Location" />
     <input v-model.number="radius" type="number" />
-    <button @click="getUserLocation">
-      <font-awesome-icon icon="fa-solid fa-compass"></font-awesome-icon>
-    </button>
     <input v-model="range" placeholder="Range" />
     <button @click="handleSearch">Search</button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, Ref } from "vue";
+import { onMounted, ref, Ref } from "vue";
 
 import { reverse, search } from "../geocoding";
 import * as types from "../types";
@@ -36,16 +33,11 @@ const errorMessage: Ref<string> = ref("");
 
 // Non-reactive variables
 var coords: types.Location | null = null;
-var got_current_location = false;
+var users_location: string | null = null;
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function blurred() {
-  await sleep(1000);
-  console.log("blurred");
-}
+onMounted(() => {
+  getUserLocation();
+});
 
 const getUserLocation = () => {
   if (navigator.geolocation) {
@@ -64,7 +56,8 @@ const getUserLocation = () => {
           readable_location["address"]["city"] +
           " " +
           readable_location["address"]["state"];
-        got_current_location = true;
+
+        users_location = location.value;
       },
       handleError
     );
@@ -75,11 +68,11 @@ const getUserLocation = () => {
 
 async function handleSearch() {
   console.log("Searched");
-  // TODO: This should redirect to a new page using a dymanic URL
 
-  if (coords == null) {
-    // We have not fetched location information
-    // Lets try and use whats in the text box
+  if (coords == null || location.value != users_location) {
+    // We have either not fetched location information
+    // Or the user has inputted a customer location we must use
+
     let api_coords = await search(location.value);
     coords = {
       latitude: Number(api_coords[0]["lat"]),
@@ -136,7 +129,7 @@ const handleError = (error: GeolocationPositionError) => {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-around;
+  justify-content: left;
 }
 
 .search-box input,
@@ -144,7 +137,6 @@ button {
   margin: 8px; /* Adjust the margin for spacing between input elements */
   padding: 10px; /* Add padding for a cleaner look */
   border-radius: 10px;
-  width: 100%;
 }
 
 .search-box button {
@@ -154,6 +146,5 @@ button {
   color: #fff;
   border: none;
   cursor: pointer;
-  width: auto;
 }
 </style>

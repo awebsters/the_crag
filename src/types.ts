@@ -1,6 +1,7 @@
-export interface Route {
+export interface Area {
   id: number;
   name: string;
+  distance: number;
   description?: string;
 }
 
